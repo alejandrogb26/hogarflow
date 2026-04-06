@@ -1,0 +1,32 @@
+{#
+  Component: page_header
+  Variables:
+    - title: string
+    - subtitle: string (optional)
+    - back_url: url (optional)
+    - action_url: url (optional)
+    - action_label: string (optional)
+#}
+<div class="flex items-center gap-3 pt-6 pb-2 px-4">
+  {% if back_url %}
+  <a href="{{ back_url }}"
+     class="w-9 h-9 rounded-xl bg-bg-elevated border border-bg-border flex items-center justify-center shrink-0 transition-base hover:bg-bg-border active:scale-95">
+    <svg class="w-4 h-4 text-neutral-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+    </svg>
+  </a>
+  {% endif %}
+  <div class="flex-1">
+    <h1 class="text-xl font-bold text-neutral-text">{{ title }}</h1>
+    {% if subtitle %}<p class="text-xs text-neutral-subtle mt-0.5">{{ subtitle }}</p>{% endif %}
+  </div>
+  {% if action_url %}
+  <a href="{{ action_url }}"
+     class="flex items-center gap-1.5 bg-brand-blue text-white text-sm font-medium px-3 py-2 rounded-xl transition-base hover:bg-brand-blueLight active:scale-95 shrink-0">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+    </svg>
+    {{ action_label | default("Nuevo") }}
+  </a>
+  {% endif %}
+</div>

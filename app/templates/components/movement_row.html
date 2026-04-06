@@ -1,0 +1,40 @@
+{# Component: renders a single movement row. Variable: m (Movement) #}
+<div class="bg-bg-card rounded-2xl border border-bg-border px-4 py-3 flex items-center gap-3">
+
+  <!-- Color dot / type indicator -->
+  <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0
+    {% if m.is_income %}bg-income-bg{% else %}bg-expense-bg{% endif %}">
+    {% if m.is_income %}
+      <svg class="w-4 h-4 text-income" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7"/>
+      </svg>
+    {% else %}
+      <svg class="w-4 h-4 text-expense" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m0 0l7-7m-7 7l-7-7"/>
+      </svg>
+    {% endif %}
+  </div>
+
+  <!-- Info -->
+  <div class="flex-1 min-w-0">
+    <div class="flex items-center gap-2">
+      <span class="text-sm font-medium text-neutral-text truncate">
+        {% if m.concept %}{{ m.concept }}{% else %}{{ m.category.name }}{% endif %}
+      </span>
+    </div>
+    <div class="flex items-center gap-2 mt-0.5">
+      <span class="text-xs" style="color: {{ m.category.color }}">{{ m.category.name }}</span>
+      <span class="text-neutral-subtle text-xs">·</span>
+      <span class="text-xs text-neutral-subtle">{{ m.date | date_fmt }}</span>
+    </div>
+  </div>
+
+  <!-- Amount -->
+  <div class="text-right shrink-0">
+    <p class="amount-font text-base font-semibold
+      {% if m.is_income %}text-income{% else %}text-expense{% endif %}">
+      {{ m.amount | currency }}
+    </p>
+  </div>
+
+</div>

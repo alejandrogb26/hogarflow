@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}HogarFlow · Error del servidor{% endblock %}
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
+  <p class="text-7xl font-bold text-bg-border mb-4">500</p>
+  <h1 class="text-xl font-semibold text-neutral-text mb-2">Error interno</h1>
+  <p class="text-sm text-neutral-muted mb-8">Algo salió mal en el servidor. Inténtalo de nuevo.</p>
+  <a href="{{ url_for('main.dashboard') }}"
+     class="inline-flex items-center gap-2 bg-brand-blue text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-base hover:bg-brand-blueLight active:scale-95">
+    Volver al inicio
+  </a>
+</div>
+{% endblock %}

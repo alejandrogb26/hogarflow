@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}HogarFlow · Dashboard{% endblock %}
+
+{% block content %}
+<div class="px-4 pt-6 space-y-6">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-xs text-neutral-subtle uppercase tracking-widest font-medium">Economía del hogar</p>
+      <h1 class="text-2xl font-bold text-neutral-text mt-0.5">HogarFlow</h1>
+    </div>
+    <div class="w-10 h-10 rounded-2xl bg-brand-blue/10 border border-brand-blue/20 flex items-center justify-center">
+      <svg class="w-5 h-5 text-brand-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+      </svg>
+    </div>
+  </div>
+
+
+  <!-- Balance card -->
+  <div class="relative rounded-3xl overflow-hidden bg-bg-card border border-bg-border shadow-card">
+    <!-- Decorative gradient -->
+    <div class="absolute inset-0 bg-gradient-to-br from-brand-blue/8 via-transparent to-brand-yellow/5 pointer-events-none"></div>
+    <div class="relative p-6">
+      <p class="text-xs text-neutral-subtle uppercase tracking-widest font-medium mb-2">Saldo actual</p>
+      <p class="amount-font text-4xl font-bold leading-none
+        {% if balance >= 0 %}text-income{% else %}text-expense{% endif %}">
+        {{ balance | currency }}
+      </p>
+      <div class="mt-4 pt-4 border-t border-bg-border flex items-center gap-2">
+        <span class="text-xs text-neutral-subtle">Saldo
+          {% if balance >= 0 %}positivo{% else %}negativo{% endif %}
+          · {{ month_name }} {{ current_year }}
+        </span>
+        {% if balance < 0 %}
+          <span class="ml-auto text-xs text-expense-light bg-expense-bg px-2 py-0.5 rounded-full">En números rojos</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Month KPIs -->
+  <div class="grid grid-cols-2 gap-3">
+    <!-- Income -->
+    <div class="bg-bg-card rounded-2xl p-4 border border-bg-border">
+      <p class="text-xs text-neutral-subtle mb-1">Ingresos</p>
+      <p class="amount-font text-lg font-semibold text-income leading-tight">{{ month_summary.income | currency }}</p>
+      <p class="text-xs text-neutral-subtle mt-1">este mes</p>
+    </div>
+    <!-- Expenses -->
+    <div class="bg-bg-card rounded-2xl p-4 border border-bg-border">
+      <p class="text-xs text-neutral-subtle mb-1">Gastos</p>
+      <p class="amount-font text-lg font-semibold text-expense leading-tight">{{ month_summary.expenses | currency }}</p>
+      <p class="text-xs text-neutral-subtle mt-1">este mes</p>
+    </div>
+  </div>
+
+  <!-- Charts section -->
+  <div class="space-y-4">
+
+    <!-- Donut: income vs expenses (all time) -->
+    <div class="bg-bg-card rounded-3xl border border-bg-border p-5 shadow-card">
+      <h2 class="text-sm font-semibold text-neutral-text mb-1">Ingresos vs Gastos</h2>
+      <p class="text-xs text-neutral-subtle mb-4">Todos los movimientos</p>
+      {% if donut_data.income == 0 and donut_data.expenses == 0 %}
+        {% include "components/empty_chart.html" %}
+      {% else %}
+        <div class="flex items-center gap-6">
+          <div class="relative w-36 h-36 shrink-0">
+            <canvas id="donutChart"></canvas>
+          </div>
+          <div class="space-y-3 flex-1">
+            <div class="flex items-center gap-3">
+              <span class="w-3 h-3 rounded-full bg-income shrink-0"></span>
+              <div>
+                <p class="text-xs text-neutral-subtle">Ingresos</p>
+                <p class="amount-font text-base font-semibold text-income">{{ donut_data.income | float | round(2) }} €</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="w-3 h-3 rounded-full bg-expense shrink-0"></span>
+              <div>
+                <p class="text-xs text-neutral-subtle">Gastos</p>
+                <p class="amount-font text-base font-semibold text-expense">{{ donut_data.expenses | float | round(2) }} €</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+
+    <!-- Donut: expense by category this month -->
+    {% if expense_by_cat %}
+    <div class="bg-bg-card rounded-3xl border border-bg-border p-5 shadow-card">
+      <h2 class="text-sm font-semibold text-neutral-text mb-1">Gastos por categoría</h2>
+      <p class="text-xs text-neutral-subtle mb-4">{{ month_name }} {{ current_year }}</p>
+      <div class="flex items-start gap-4">
+        <div class="relative w-32 h-32 shrink-0">
+          <canvas id="catChart"></canvas>
+        </div>
+        <div class="space-y-2 flex-1 overflow-hidden">
+          {% for item in expense_by_cat %}
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background: {{ item.color }}"></span>
+            <span class="text-xs text-neutral-muted truncate flex-1">{{ item.category }}</span>
+            <span class="amount-font text-xs text-neutral-text font-medium shrink-0">{{ item.total | round(2) }} €</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Recent movements -->
+  <div>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-sm font-semibold text-neutral-text">Últimos movimientos</h2>
+      <a href="{{ url_for('movements.index') }}" class="text-xs text-brand-blue hover:text-brand-blueLight transition-base">Ver todos →</a>
+    </div>
+
+    {% if recent_movements %}
+      <div class="space-y-2">
+        {% for m in recent_movements %}
+          {% include "components/movement_row.html" %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="bg-bg-card rounded-2xl border border-bg-border p-8 text-center">
+        <div class="w-12 h-12 rounded-2xl bg-bg-elevated mx-auto mb-3 flex items-center justify-center">
+          <svg class="w-6 h-6 text-neutral-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        </div>
+        <p class="text-sm text-neutral-muted font-medium mb-1">Sin movimientos aún</p>
+        <p class="text-xs text-neutral-subtle mb-4">Registra tu primer ingreso o gasto.</p>
+        <a href="{{ url_for('movements.create') }}"
+           class="inline-flex items-center gap-2 bg-brand-blue text-white text-sm font-medium px-4 py-2 rounded-xl transition-base hover:bg-brand-blueLight active:scale-95">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          Nuevo movimiento
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const donutData = {{ donut_data | tojson }};
+const catData = {{ expense_by_cat | tojson }};
+
+// Shared chart defaults
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.font.family = "'DM Sans', system-ui, sans-serif";
+Chart.defaults.font.size = 11;
+
+// ── Donut: income vs expenses ──
+if (donutData.income > 0 || donutData.expenses > 0) {
+  const ctx = document.getElementById('donutChart');
+  if (ctx) {
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Ingresos', 'Gastos'],
+        datasets: [{
+          data: [donutData.income, donutData.expenses],
+          backgroundColor: ['#10b981', '#ef4444'],
+          borderColor: '#1a2235',
+          borderWidth: 3,
+          hoverOffset: 6,
+        }]
+      },
+      options: {
+        cutout: '72%',
+        plugins: { legend: { display: false }, tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.parsed.toFixed(2)} €`
+          }
+        }},
+        animation: { animateRotate: true, duration: 800 }
+      }
+    });
+  }
+}
+
+
+// ── Category donut (this month) ──
+if (catData.length > 0) {
+  const ctx3 = document.getElementById('catChart');
+  if (ctx3) {
+    new Chart(ctx3, {
+      type: 'doughnut',
+      data: {
+        labels: catData.map(c => c.category),
+        datasets: [{
+          data: catData.map(c => c.total),
+          backgroundColor: catData.map(c => c.color),
+          borderColor: '#1a2235',
+          borderWidth: 2,
+          hoverOffset: 4,
+        }]
+      },
+      options: {
+        cutout: '68%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: { label: ctx => ` ${ctx.parsed.toFixed(2)} €` }
+          }
+        },
+        animation: { duration: 600 }
+      }
+    });
+  }
+}
+</script>
+{% endblock %}

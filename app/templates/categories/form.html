@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}HogarFlow · {% if action == 'edit' %}Editar{% else %}Nueva{% endif %} categoría{% endblock %}
+
+{% block content %}
+<div class="px-4 space-y-4">
+
+  {% if action == 'edit' %}
+    {% with title="Editar categoría", back_url=url_for('categories.index') %}
+      {% include "components/page_header.html" %}
+    {% endwith %}
+  {% else %}
+    {% with title="Nueva categoría", back_url=url_for('categories.index') %}
+      {% include "components/page_header.html" %}
+    {% endwith %}
+  {% endif %}
+
+  <div class="bg-bg-card rounded-3xl border border-bg-border p-5"
+       x-data="{
+         name: '{{ form_data.name | default('') | e }}',
+         color: '{{ form_data.color | default(colors[0]) }}',
+         get initial() { return this.name ? this.name[0].toUpperCase() : '?' }
+       }">
+
+    <!-- Preview -->
+    <div class="flex items-center gap-4 mb-6 p-4 bg-bg-elevated rounded-2xl border border-bg-border">
+      <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg transition-all duration-200"
+           :style="'background: ' + color + '22; border: 2px solid ' + color + '55'">
+        <span :style="'color: ' + color" x-text="initial"></span>
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-neutral-text" x-text="name || 'Nombre de categoría'"></p>
+        <p class="text-xs mt-0.5" :style="'color: ' + color" x-text="color"></p>
+      </div>
+    </div>
+
+    <form method="POST"
+          action="{% if action == 'edit' %}{{ url_for('categories.edit', category_id=category.id) }}{% else %}{{ url_for('categories.create') }}{% endif %}"
+          class="space-y-5">
+
+      <!-- Name -->
+      <div>
+        <label for="name" class="block text-xs font-medium text-neutral-subtle mb-1.5 uppercase tracking-wide">
+          Nombre <span class="text-expense">*</span>
+        </label>
+        <input type="text"
+               id="name"
+               name="name"
+               maxlength="80"
+               required
+               placeholder="Ej: Supermercado"
+               value="{{ form_data.name | default('') }}"
+               x-model="name"
+               class="w-full bg-bg-elevated border border-bg-border rounded-2xl px-4 py-3 text-sm text-neutral-text
+                      placeholder:text-neutral-subtle focus:outline-none focus:ring-2 focus:ring-brand-blue/40
+                      focus:border-brand-blue transition-base" />
+      </div>
+
+      <!-- Color picker -->
+      <div>
+        <label class="block text-xs font-medium text-neutral-subtle mb-2 uppercase tracking-wide">Color</label>
+        <div class="grid grid-cols-5 gap-3">
+          {% for col in colors %}
+          <label class="cursor-pointer">
+            <input type="radio" name="color" value="{{ col }}" class="sr-only"
+                   {% if form_data.color == col or (not form_data.color and loop.first) %}checked{% endif %}
+                   x-model="color" />
+            <div class="w-full aspect-square rounded-xl border-2 transition-all duration-150 active:scale-90"
+                 :style="color === '{{ col }}' ? 'border-color: {{ col }}; background: {{ col }}33' : 'border-color: transparent; background: {{ col }}'"
+                 style="background: {{ col }}; border-color: {% if form_data.color == col %}{{ col }}{% else %}transparent{% endif %}">
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+
+        <!-- Custom color -->
+        <div class="mt-3 flex items-center gap-3">
+          <label class="text-xs text-neutral-subtle">Color personalizado:</label>
+          <input type="color"
+                 x-model="color"
+                 @change="color = $event.target.value"
+                 class="w-10 h-8 rounded-lg border border-bg-border bg-bg-elevated cursor-pointer p-0.5" />
+          <span class="text-xs amount-font text-neutral-muted" x-text="color"></span>
+        </div>
+        <!-- Hidden input synced with Alpine -->
+        <input type="hidden" name="color" :value="color" />
+        <!-- Remove the radio name collision: override with hidden -->
+      </div>
+
+      <!-- Actions -->
+      <div class="flex gap-3 pt-2">
+        <a href="{{ url_for('categories.index') }}"
+           class="flex-1 py-3.5 rounded-2xl bg-bg-elevated border border-bg-border text-sm font-medium
+                  text-neutral-muted text-center hover:text-neutral-text transition-base">
+          Cancelar
+        </a>
+        <button type="submit"
+                class="flex-1 py-3.5 rounded-2xl bg-brand-blue text-white text-sm font-semibold
+                       hover:bg-brand-blueLight transition-base active:scale-95 shadow-glow">
+          {% if action == 'edit' %}Guardar cambios{% else %}Crear categoría{% endif %}
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Ensure the hidden color input is the one submitted (not the radio buttons)
+document.querySelector('form')?.addEventListener('submit', function() {
+  const radios = this.querySelectorAll('input[type="radio"][name="color"]');
+  radios.forEach(r => r.removeAttribute('name'));
+});
+</script>
+{% endblock %}

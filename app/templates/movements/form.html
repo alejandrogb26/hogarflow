@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}HogarFlow · {% if action == 'edit' %}Editar{% else %}Nuevo{% endif %} movimiento{% endblock %}
+
+{% block content %}
+<div class="px-4 space-y-4">
+
+  {% if action == 'edit' %}
+    {% with title="Editar movimiento", back_url=url_for('movements.index') %}
+      {% include "components/page_header.html" %}
+    {% endwith %}
+  {% else %}
+    {% with title="Nuevo movimiento", back_url=url_for('movements.index') %}
+      {% include "components/page_header.html" %}
+    {% endwith %}
+  {% endif %}
+
+  <!-- Type hint card -->
+  <div class="bg-bg-card rounded-3xl border border-bg-border p-5"
+       x-data="{
+         amount: '{{ form_data.amount | default('') }}',
+         get isIncome() { return parseFloat(this.amount.replace(',','.')) > 0 },
+         get isExpense() { return parseFloat(this.amount.replace(',','.')) < 0 },
+         get isZero() { return !this.amount || parseFloat(this.amount.replace(',','.')) === 0 || isNaN(parseFloat(this.amount.replace(',','.'))) }
+       }">
+
+    <!-- Form -->
+    <form method="POST"
+          action="{% if action == 'edit' %}{{ url_for('movements.edit', movement_id=movement.id) }}{% else %}{{ url_for('movements.create') }}{% endif %}"
+          class="space-y-4">
+
+      <!-- Amount — most prominent field -->
+      <div>
+        <label for="amount" class="block text-xs font-medium text-neutral-subtle mb-1.5 uppercase tracking-wide">
+          Importe <span class="text-expense">*</span>
+        </label>
+        <div class="relative">
+          <input type="number"
+                 id="amount"
+                 name="amount"
+                 step="0.01"
+                 placeholder="0.00"
+                 value="{{ form_data.amount | default('') }}"
+                 x-model="amount"
+                 required
+                 class="w-full bg-bg-elevated border border-bg-border rounded-2xl px-4 py-4 text-2xl amount-font font-bold text-center
+                        focus:outline-none focus:ring-2 transition-all duration-200 pr-12
+                        focus:ring-brand-blue/40 focus:border-brand-blue
+                        placeholder:text-neutral-subtle"
+                 :class="{
+                   'text-income': isIncome,
+                   'text-expense': isExpense,
+                   'text-neutral-text': isZero
+                 }" />
+          <span class="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-subtle text-lg font-medium">€</span>
+        </div>
+      </div>
+
+      <!-- Date -->
+      <div>
+        <label for="date" class="block text-xs font-medium text-neutral-subtle mb-1.5 uppercase tracking-wide">
+          Fecha <span class="text-expense">*</span>
+        </label>
+        <input type="date"
+               id="date"
+               name="date"
+               value="{{ form_data.date | default('') }}"
+               required
+               class="w-full bg-bg-elevated border border-bg-border rounded-2xl px-4 py-3 text-sm text-neutral-text
+                      focus:outline-none focus:ring-2 focus:ring-brand-blue/40 focus:border-brand-blue
+                      transition-base [color-scheme:dark]" />
+      </div>
+
+      <!-- Category -->
+      <div>
+        <label for="category_id" class="block text-xs font-medium text-neutral-subtle mb-1.5 uppercase tracking-wide">
+          Categoría <span class="text-expense">*</span>
+        </label>
+        <select id="category_id"
+                name="category_id"
+                required
+                class="w-full bg-bg-elevated border border-bg-border rounded-2xl px-4 py-3 text-sm text-neutral-text
+                       focus:outline-none focus:ring-2 focus:ring-brand-blue/40 focus:border-brand-blue
+                       transition-base">
+          <option value="">Selecciona una categoría</option>
+          {% for cat in categories %}
+            <option value="{{ cat.id }}"
+              {% if form_data.category_id | string == cat.id | string %}selected{% endif %}>
+              {{ cat.name }}
+            </option>
+          {% endfor %}
+        </select>
+        <p class="text-xs text-neutral-subtle mt-1.5">
+          ¿No está la que buscas?
+          <a href="{{ url_for('categories.create') }}" class="text-brand-blue hover:text-brand-blueLight">Crear categoría</a>
+        </p>
+      </div>
+
+      <!-- Concept -->
+      <div>
+        <label for="concept" class="block text-xs font-medium text-neutral-subtle mb-1.5 uppercase tracking-wide">
+          Concepto <span class="text-neutral-subtle font-normal">(opcional)</span>
+        </label>
+        <input type="text"
+               id="concept"
+               name="concept"
+               maxlength="255"
+               placeholder="Ej: Factura de marzo, Nomina abril…"
+               value="{{ form_data.concept | default('') }}"
+               class="w-full bg-bg-elevated border border-bg-border rounded-2xl px-4 py-3 text-sm text-neutral-text
+                      placeholder:text-neutral-subtle focus:outline-none focus:ring-2 focus:ring-brand-blue/40
+                      focus:border-brand-blue transition-base" />
+      </div>
+
+      <!-- Submit -->
+      <div class="flex gap-3 pt-2">
+        <a href="{{ url_for('movements.index') }}"
+           class="flex-1 py-3.5 rounded-2xl bg-bg-elevated border border-bg-border text-sm font-medium text-neutral-muted
+                  text-center hover:text-neutral-text transition-base">
+          Cancelar
+        </a>
+        <button type="submit"
+                class="flex-1 py-3.5 rounded-2xl bg-brand-blue text-white text-sm font-semibold
+                       hover:bg-brand-blueLight transition-base active:scale-95 shadow-glow">
+          {% if action == 'edit' %}Guardar cambios{% else %}Registrar{% endif %}
+        </button>
+      </div>
+
+      <!-- Delete option when editing -->
+      {% if action == 'edit' %}
+      <div class="border-t border-bg-border pt-4">
+        {% with modal_id="del-movement",
+                form_action=url_for('movements.delete', movement_id=movement.id),
+                title="¿Eliminar movimiento?",
+                message="Esta acción no se puede deshacer y afectará al saldo del hogar.",
+                confirm_label="Eliminar movimiento" %}
+          {% include "components/confirm_delete.html" %}
+        {% endwith %}
+      </div>
+      {% endif %}
+
+    </form>
+  </div>
+
+</div>
+{% endblock %}
