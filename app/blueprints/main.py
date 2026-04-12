@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, redirect, url_for
 from datetime import date
 from app.utils import (
     get_current_balance,
@@ -6,7 +6,8 @@ from app.utils import (
     get_recent_movements,
     get_monthly_totals,
     get_expense_by_category,
-    get_income_vs_expense_totals,
+    get_period_start,
+    set_period_start,
     month_name,
 )
 
@@ -21,7 +22,7 @@ def dashboard():
     recent_movements = get_recent_movements(limit=8)
     monthly_totals = get_monthly_totals(months=6)
     expense_by_cat = get_expense_by_category()
-    donut_data = get_income_vs_expense_totals()
+    period_start = get_period_start()
 
     return render_template(
         "main/dashboard.html",
@@ -30,9 +31,15 @@ def dashboard():
         recent_movements=recent_movements,
         monthly_totals=monthly_totals,
         expense_by_cat=expense_by_cat,
-        donut_data=donut_data,
+        period_start=period_start,
         today=today,
         month_name=month_name(today.month),
         current_year=today.year,
         current_month=today.month,
     )
+
+
+@main.route("/nuevo-periodo", methods=["POST"])
+def new_period():
+    set_period_start(date.today())
+    return redirect(url_for("main.dashboard"))

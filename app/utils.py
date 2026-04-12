@@ -2,7 +2,22 @@ from datetime import date, datetime
 from decimal import Decimal
 from sqlalchemy import func, extract, case
 from app import db
-from app.models import Movement, Category
+from app.models import Movement, Category, AppConfig
+
+PERIOD_START_KEY = "period_start_date"
+
+
+def get_period_start():
+    """Return the current period start date, defaulting to the 1st of current month."""
+    val = AppConfig.get(PERIOD_START_KEY)
+    if val:
+        return date.fromisoformat(val)
+    today = date.today()
+    return date(today.year, today.month, 1)
+
+
+def set_period_start(d: date):
+    AppConfig.set(PERIOD_START_KEY, d.isoformat())
 
 
 # ── Template filters ──────────────────────────────────────────────────────────
@@ -32,11 +47,9 @@ def get_current_balance():
     return Decimal(str(result)) if result is not None else Decimal("0.00")
 
 
-def get_month_summary(year=None, month=None):
-    """Return income, expenses and net for a given month (defaults to current)."""
-    today = date.today()
-    year = year or today.year
-    month = month or today.month
+def get_month_summary():
+    """Return income, expenses and net since the current period start date."""
+    start = get_period_start()
 
     q = db.session.query(
         func.coalesce(
@@ -58,10 +71,7 @@ def get_month_summary(year=None, month=None):
             0
         ).label("expenses"),
         func.coalesce(func.sum(Movement.amount), 0).label("net"),
-    ).filter(
-        extract("year", Movement.date) == year,
-        extract("month", Movement.date) == month,
-    )
+    ).filter(Movement.date >= start)
 
     row = q.one()
 
@@ -69,8 +79,7 @@ def get_month_summary(year=None, month=None):
         "income": Decimal(str(row.income)) if row.income else Decimal("0.00"),
         "expenses": Decimal(str(row.expenses)) if row.expenses else Decimal("0.00"),
         "net": Decimal(str(row.net)) if row.net else Decimal("0.00"),
-        "year": year,
-        "month": month,
+        "period_start": start,
     }
 
 
@@ -135,11 +144,9 @@ def get_monthly_totals(months=6):
     return result
 
 
-def get_expense_by_category(year=None, month=None):
-    """Return total expenses grouped by category for a given month."""
-    today = date.today()
-    year = year or today.year
-    month = month or today.month
+def get_expense_by_category():
+    """Return total expenses grouped by category since the current period start date."""
+    start = get_period_start()
 
     rows = (
         db.session.query(
@@ -150,8 +157,7 @@ def get_expense_by_category(year=None, month=None):
         .join(Movement, Movement.category_id == Category.id)
         .filter(
             Movement.amount < 0,
-            extract("year", Movement.date) == year,
-            extract("month", Movement.date) == month,
+            Movement.date >= start,
         )
         .group_by(Category.id, Category.name, Category.color)
         .order_by(func.sum(Movement.amount).asc())

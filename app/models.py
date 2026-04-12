@@ -25,6 +25,32 @@ class Category(db.Model):
         return {"id": self.id, "name": self.name, "color": self.color}
 
 
+class AppConfig(db.Model):
+    """
+    Single-row key-value config table.
+    Used to store app-wide settings like the current period start date.
+    """
+    __tablename__ = "app_config"
+
+    key = db.Column("config_key", db.String(80), primary_key=True)
+    value = db.Column("config_value", db.String(255), nullable=False)
+
+    @classmethod
+    def get(cls, key, default=None):
+        row = cls.query.get(key)
+        return row.value if row else default
+
+    @classmethod
+    def set(cls, key, value):
+        row = cls.query.get(key)
+        if row:
+            row.value = str(value)
+        else:
+            row = cls(key=key, value=str(value))
+            db.session.add(row)
+        db.session.commit()
+
+
 class Movement(db.Model):
     """
     A financial movement (income or expense).
